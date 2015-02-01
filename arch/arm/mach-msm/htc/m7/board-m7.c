@@ -29,7 +29,11 @@
 #include <linux/msm_ion.h>
 #include <linux/memory.h>
 #include <linux/memblock.h>
+#ifdef CONFIG_BRICKED_THERMAL
+#include <linux/msm_thermal_bricked.h>
+#else
 #include <linux/msm_thermal.h>
+#endif
 #include <linux/i2c/atmel_mxt_ts.h>
 #include <linux/cyttsp-qc.h>
 #include <linux/gpio_keys.h>
@@ -2518,6 +2522,7 @@ static struct platform_device msm_tsens_device = {
 	.id = -1,
 };
 
+#ifdef CONFIG_BRICKED_THERMAL
 static struct msm_thermal_data msm_thermal_pdata = {
 	.sensor_id = 7,
 	.poll_ms = 250,
@@ -2528,6 +2533,7 @@ static struct msm_thermal_data msm_thermal_pdata = {
 	.core_temp_hysteresis_degC = 10,
 	.core_control_mask = 0xe,
 };
+#endif
 
 #define MSM_SHARED_RAM_PHYS 0x80000000
 static void __init m7_map_io(void)
