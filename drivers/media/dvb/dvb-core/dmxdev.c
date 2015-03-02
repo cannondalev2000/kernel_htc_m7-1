@@ -1823,7 +1823,7 @@ static int dvb_dmxdev_section_callback(const u8 *buffer1, size_t buffer1_len,
 
 	dvb_dmxdev_add_event(&dmxdevfilter->events, &event);
 
-	if (dmxdevfilter->params.sec.flags & DMX_ONESHOT)
+ 	if (dmxdevfilter->params.sec.flags & DMX_ONESHOT)
 		dmxdevfilter->state = DMXDEV_STATE_DONE;
 	spin_unlock(&dmxdevfilter->dev->lock);
 	wake_up_all(&dmxdevfilter->buffer.queue);
