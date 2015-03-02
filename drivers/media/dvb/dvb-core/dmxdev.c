@@ -4,7 +4,7 @@
  * Copyright (C) 2000 Ralph Metzler & Marcus Metzler
  *		      for convergence integrated media GmbH
  *
- * Copyright (c) 2012-2013, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2014, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -1461,6 +1461,11 @@ static int dvb_dmxdev_ts_fullness_callback(
 	struct dmxdev_events_queue *events;
 	int ret;
 
+	if (!dmxdevfilter) {
+		pr_err("%s: NULL demux filter object!\n", __func__);
+		return -ENODEV;
+	}
+
 	if (dmxdevfilter->params.pes.output != DMX_OUT_TS_TAP) {
 		src = &dmxdevfilter->buffer;
 		events = &dmxdevfilter->events;
@@ -1514,9 +1519,17 @@ static int dvb_dmxdev_sec_fullness_callback(
 				int required_space)
 {
 	struct dmxdev_filter *dmxdevfilter = filter->priv;
-	struct dvb_ringbuffer *src = &dmxdevfilter->buffer;
-	struct dmxdev_events_queue *events = &dmxdevfilter->events;
+	struct dvb_ringbuffer *src;
+	struct dmxdev_events_queue *events;
 	int ret;
+
+	if (!dmxdevfilter) {
+		pr_err("%s: NULL demux filter object!\n", __func__);
+		return -ENODEV;
+	}
+
+	src = &dmxdevfilter->buffer;
+	events = &dmxdevfilter->events;
 
 	do {
 		ret = 0;
@@ -1823,7 +1836,7 @@ static int dvb_dmxdev_section_callback(const u8 *buffer1, size_t buffer1_len,
 
 	dvb_dmxdev_add_event(&dmxdevfilter->events, &event);
 
- 	if (dmxdevfilter->params.sec.flags & DMX_ONESHOT)
+	if (dmxdevfilter->params.sec.flags & DMX_ONESHOT)
 		dmxdevfilter->state = DMXDEV_STATE_DONE;
 	spin_unlock(&dmxdevfilter->dev->lock);
 	wake_up_all(&dmxdevfilter->buffer.queue);

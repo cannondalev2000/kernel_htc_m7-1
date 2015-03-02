@@ -801,11 +801,9 @@ int usb_wwan_suspend(struct usb_serial *serial, pm_message_t message)
 
 	spin_lock_irq(&intfdata->susp_lock);
 	if (PMSG_IS_AUTO(message)) {
-		spin_lock_irq(&intfdata->susp_lock);
-		b = intfdata->in_flight;
-		spin_unlock_irq(&intfdata->susp_lock);
-
-		if (b || pm_runtime_autosuspend_expiration(&serial->dev->dev))
+		if (intfdata->in_flight ||
+				pm_runtime_autosuspend_expiration(&serial->dev->dev)) {
+			spin_unlock_irq(&intfdata->susp_lock);
 			return -EBUSY;
 		}
 	}
@@ -860,41 +858,47 @@ int usb_wwan_resume(struct usb_serial *serial)
 	dbg("%s entered", __func__);
 
 	spin_lock_irq(&intfdata->susp_lock);
-	intfdata->suspended = 0;
 	for (i = 0; i < serial->num_ports; i++) {
 		/* walk all ports */
 		port = serial->port[i];
 		portdata = usb_get_serial_port_data(port);
 
 		/* skip closed ports */
-		if (!portdata->opened)
+		if (!portdata || !portdata->opened)
 			continue;
+
+		if (port->interrupt_in_urb) {
+			err = usb_submit_urb(port->interrupt_in_urb,
+					GFP_ATOMIC);
+			if (err) {
+				dev_err(&port->dev,
+					"%s: submit int urb failed: %d\n",
+					__func__, err);
+				err_count++;
+			}
+		}
+
+		err = play_delayed(port);
+		if (err)
+			err_count++;
 
 		for (j = 0; j < N_IN_URB; j++) {
 			urb = portdata->in_urbs[j];
-
-			/* don't re-submit if it already was submitted or if
-			 * it is being processed by in_work */
-			if (urb->anchor || !list_empty(&urb->urb_list))
-				continue;
-
-			usb_anchor_urb(urb, &portdata->submitted);
 			err = usb_submit_urb(urb, GFP_ATOMIC);
 			if (err < 0) {
-				err("%s: Error %d for bulk URB[%d]:%p %d",
-				    __func__, err, j, urb, i);
-				usb_unanchor_urb(urb);
-				intfdata->suspended = 1;
-				spin_unlock_irq(&intfdata->susp_lock);
-				goto err_out;
+				err("%s: Error %d for bulk URB %d",
+				    __func__, err, i);
+				err_count++;
 			}
 		}
-		play_delayed(port);
 	}
+	intfdata->suspended = 0;
 	spin_unlock_irq(&intfdata->susp_lock);
 
-err_out:
-	return err;
+	if (err_count)
+		return -EIO;
+
+	return 0;
 }
 EXPORT_SYMBOL(usb_wwan_resume);
 #endif
