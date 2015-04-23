@@ -1367,7 +1367,8 @@ static int qseecom_receive_req(struct qseecom_dev_handle *data)
 		if (wait_event_freezable(this_lstnr->rcv_req_wq,
 				__qseecom_listener_has_rcvd_req(data,
 				this_lstnr))) {
-			pr_warning("Interrupted: exiting wait_rcv_req loop\n");
+			pr_debug("Interrupted: exiting Listener Service = %d\n",
+						(uint32_t)data->listener.id);
 			/* woken up for different reason */
 			return -ERESTARTSYS;
 		}
@@ -1589,6 +1590,12 @@ int qseecom_start_app(struct qseecom_handle **handle,
 		return -EINVAL;
 	}
 
+	if (!app_name || strlen(app_name) >= MAX_APP_NAME_SIZE) {
+		pr_err("The app_name (%s) with length %zu is not valid\n",
+			app_name, strlen(app_name));
+		return -EINVAL;
+	}
+
 	*handle = kzalloc(sizeof(struct qseecom_handle), GFP_KERNEL);
 	if (!(*handle)) {
 		pr_err("failed to allocate memory for kernel client handle\n");
@@ -1663,6 +1670,7 @@ int qseecom_start_app(struct qseecom_handle **handle,
 			return ret;
 		}
 		data->client.app_id = ret;
+		memcpy(data->client.app_name, app_name, MAX_APP_NAME_SIZE);
 	}
 	if (!found_app) {
 		entry = kmalloc(sizeof(*entry), GFP_KERNEL);
@@ -1675,6 +1683,7 @@ int qseecom_start_app(struct qseecom_handle **handle,
 		}
 		entry->app_id = ret;
 		entry->ref_cnt = 1;
+		memcpy(entry->app_name, app_name, MAX_APP_NAME_SIZE);
 
 		spin_lock_irqsave(&qseecom.registered_app_list_lock, flags);
 		list_add_tail(&entry->list, &qseecom.registered_app_list_head);
@@ -1727,6 +1736,9 @@ int qseecom_shutdown_app(struct qseecom_handle **handle)
 		return -EINVAL;
 	}
 	data =	(struct qseecom_dev_handle *) ((*handle)->dev);
+	mutex_lock(&app_access_lock);
+	atomic_inc(&data->ioctl_count);
+
 	spin_lock_irqsave(&qseecom.registered_kclient_list_lock, flags);
 	list_for_each_entry(kclient, &qseecom.registered_kclient_list_head,
 				list) {
@@ -1747,6 +1759,7 @@ int qseecom_shutdown_app(struct qseecom_handle **handle)
 		kzfree(kclient);
 		*handle = NULL;
 	}
+
 	return ret;
 }
 EXPORT_SYMBOL(qseecom_shutdown_app);
@@ -2219,7 +2232,7 @@ static long qseecom_ioctl(struct file *file, unsigned cmd,
 		ret = qseecom_receive_req(data);
 		atomic_dec(&data->ioctl_count);
 		wake_up_all(&data->abort_wq);
-		if (ret)
+		if (ret && (ret != -ERESTARTSYS))
 			pr_err("failed qseecom_receive_req: %d\n", ret);
 		break;
 	}
