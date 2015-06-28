@@ -254,8 +254,8 @@ MISC = -funsafe-math-optimizations
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes $(O3) $(LTO) $(GRAPHITE) $(STRICT) $(LOOPNEST) $(PIPE) $(MISC) $(NOWARN)
-HOSTCXXFLAGS = $(O3) $(LTO) $(GRAPHITE) $(STRICT) $(LOOPNEST) $(PIPE) $(MISC) $(NOWARN)
+HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes $(O3) $(GRAPHITE) $(STRICT) $(LOOPNEST) $(PIPE) $(MISC) $(NOWARN)
+HOSTCXXFLAGS = $(O3) $(GRAPHITE) $(STRICT) $(LOOPNEST) $(PIPE) $(MISC) $(NOWARN)
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -373,9 +373,8 @@ LINUXINCLUDE    := -I$(srctree)/arch/$(hdr-arch)/include \
 
 KBUILD_CPPFLAGS := -D__KERNEL__
 
-KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
+KBUILD_CFLAGS   := -Wall -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common \
-		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
 		   -fno-delete-null-pointer-checks
 KBUILD_AFLAGS_KERNEL :=
@@ -567,7 +566,7 @@ endif # $(dot-config)
 # Defaults to vmlinux, but the arch makefile usually adds further targets
 all: vmlinux
 
-KBUILD_CFLAGS	+= $(O3) $(LTO) $(GRAPHITE) $(STRICT) $(LOOPNEST) $(PIPE) $(MISC) $(NOWARN)
+KBUILD_CFLAGS	+= $(O3) $(GRAPHITE) $(STRICT) $(LOOPNEST) $(PIPE) $(MISC) $(NOWARN)
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
 
