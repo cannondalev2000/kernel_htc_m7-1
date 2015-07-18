@@ -254,8 +254,8 @@ MISC = -funsafe-math-optimizations
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes $(O3) $(GRAPHITE) $(STRICT) $(LOOPNEST) $(PIPE) $(MISC) $(NOWARN)
-HOSTCXXFLAGS = $(O3) $(GRAPHITE) $(STRICT) $(LOOPNEST) $(PIPE) $(MISC) $(NOWARN)
+HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes $(O3) $(STRICT) $(LOOPNEST) $(PIPE) $(MISC) $(NOWARN)
+HOSTCXXFLAGS = $(O3) $(STRICT) $(LOOPNEST) $(PIPE) $(MISC) $(NOWARN)
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -566,7 +566,7 @@ endif # $(dot-config)
 # Defaults to vmlinux, but the arch makefile usually adds further targets
 all: vmlinux
 
-KBUILD_CFLAGS	+= $(O3) $(GRAPHITE) $(STRICT) $(LOOPNEST) $(PIPE) $(MISC) $(NOWARN)
+KBUILD_CFLAGS	+= $(O3) $(STRICT) $(LOOPNEST) $(PIPE) $(MISC) $(NOWARN)
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
 
